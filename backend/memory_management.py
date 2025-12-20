@@ -1193,14 +1193,26 @@ signal_empty_cache = False
 
 def soft_empty_cache(force=False):
     global cpu_state, signal_empty_cache
-    if cpu_state == CPUState.MPS:
-        torch.mps.empty_cache()
-    elif is_intel_xpu():
-        torch.xpu.empty_cache()
-    elif torch.cuda.is_available():
-        if force or is_nvidia():  # This seems to make things worse on ROCm so I only do it for cuda
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+    try:
+        if cpu_state == CPUState.MPS:
+            torch.mps.empty_cache()
+        elif is_intel_xpu():
+            torch.xpu.empty_cache()
+        elif torch.cuda.is_available():
+            if force or is_nvidia():  # This seems to make things worse on ROCm so I only do it for cuda
+                try:
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+                except RuntimeError as e:
+                    # CUDAメモリ不足エラーの場合、処理を続行
+                    # メモリが既に不足している状態では、キャッシュクリアも失敗する可能性がある
+                    if "out of memory" in str(e).lower():
+                        pass  # エラーを無視して処理を続行
+                    else:
+                        raise  # その他のエラーは再発生
+    except Exception:
+        # その他の予期しないエラーも無視して処理を続行
+        pass
     signal_empty_cache = False
     return
 
