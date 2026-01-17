@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkpoint Compare</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 24px; background: #0b0f14; color: #e6edf3; }
+    .header { max-width: 1100px; margin: 0 auto 18px; }
+    .header pre { background: #111826; padding: 12px; border-radius: 10px; overflow: auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto; }
+    .card { background: #0f1623; border: 1px solid #1f2a3a; border-radius: 14px; padding: 12px; }
+    .title { font-weight: 700; margin-bottom: 6px; }
+    .query { opacity: 0.85; margin-bottom: 10px; font-size: 12px; }
+    img { width: 100%; height: auto; border-radius: 10px; border: 1px solid #223044; }
+    a { color: #79c0ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: #111826; padding: 2px 6px; border-radius: 8px; }
+    .meta { margin-top: 8px; font-size: 12px; opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Checkpoint Compare</h2>
+    <div style="opacity:0.9">生成条件（固定）</div>
+    <pre>{
+  &quot;base_url&quot;: &quot;http://127.0.0.1:7860&quot;,
+  &quot;prompt&quot;: &quot;a scenic landscape, ultra detailed&quot;,
+  &quot;negative_prompt&quot;: &quot;&quot;,
+  &quot;steps&quot;: 30,
+  &quot;cfg_scale&quot;: 6.0,
+  &quot;sampler_index&quot;: &quot;DPM++ 2M&quot;,
+  &quot;seed&quot;: 12345,
+  &quot;width&quot;: 1024,
+  &quot;height&quot;: 1024
+}</pre>
+  </div>
+  <div class="grid">
+    
+            <div class="card">
+              <div class="title">animagineXLV31_v31.safetensors</div>
+              <div class="query">query: <code>animagineXLV31_v31</code></div>
+              <a href="cmp-01-animagineXLV31_v31.safetensors.png" target="_blank"><img src="cmp-01-animagineXLV31_v31.safetensors.png" loading="lazy"/></a>
+              <div class="meta">
+                <a href="cmp-01-animagineXLV31_v31.safetensors.info.json" target="_blank">info.json</a>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="title">illustriousXL_v01.safetensors</div>
+              <div class="query">query: <code>illustriousXL_v01</code></div>
+              <a href="cmp-02-illustriousXL_v01.safetensors.png" target="_blank"><img src="cmp-02-illustriousXL_v01.safetensors.png" loading="lazy"/></a>
+              <div class="meta">
+                <a href="cmp-02-illustriousXL_v01.safetensors.info.json" target="_blank">info.json</a>
+              </div>
+            </div>
+            
+  </div>
+</body>
+</html>

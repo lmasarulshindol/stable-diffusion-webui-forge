@@ -1,0 +1,11 @@
+{
+  "base_url": "http://127.0.0.1:7860",
+  "prompt": "a scenic landscape, ultra detailed",
+  "negative_prompt": "",
+  "steps": 30,
+  "cfg_scale": 6.0,
+  "sampler_index": "DPM++ 2M",
+  "seed": 12345,
+  "width": 1024,
+  "height": 1024
+}

@@ -1,0 +1,11 @@
+{
+  "base_url": "http://127.0.0.1:7860",
+  "prompt": "1girl, long black hair, white camisole, simple background, studio lighting, anime illustration, clean lineart, soft shading, high detail",
+  "negative_prompt": "nsfw, nude, nipples, cleavage, lingerie, see-through, watermark, text, logo, extra fingers, bad hands, deformed, lowres, blurry",
+  "steps": 30,
+  "cfg_scale": 6.0,
+  "sampler_index": "DPM++ 2M",
+  "seed": 12345,
+  "width": 1024,
+  "height": 1024
+}

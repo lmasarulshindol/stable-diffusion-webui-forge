@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SD Prompt Generator - All in One</title>
+    <style>
+        :root {
+            --bg-color: #1a1b26;
+            --card-bg: #24283b;
+            --text-color: #a9b1d6;
+            --accent-color: #7aa2f7;
+            --btn-bg: #414868;
+            --btn-hover: #565f89;
+            --input-bg: #16161e;
+            --header-bg: #2f3549;
+            --ja-text: #e0af68;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-panel {
+            flex: 0 0 auto;
+            margin-bottom: 15px;
+            background-color: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .output-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        textarea {
+            flex-grow: 1;
+            height: 80px;
+            background-color: var(--input-bg);
+            color: #fff;
+            border: 1px solid var(--btn-bg);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            resize: none;
+            font-size: 14px;
+        }
+
+        .actions-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 0 20px;
+            height: 100%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .btn-copy { background-color: var(--accent-color); color: #1a1b26; }
+        .btn-clear { background-color: #f7768e; color: #1a1b26; }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .masonry-container {
+            column-count: 3;
+            column-gap: 15px;
+        }
+
+        @media (max-width: 1200px) { .masonry-container { column-count: 2; } }
+        @media (max-width: 768px) { .masonry-container { column-count: 1; } }
+
+        .category-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            break-inside: avoid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .category-card:hover { border-color: var(--btn-bg); }
+
+        .category-header {
+            background-color: var(--header-bg);
+            padding: 10px 15px;
+            font-weight: bold;
+            color: var(--accent-color);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        
+        .category-header:hover { background-color: var(--btn-bg); }
+
+        .category-content {
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .content-hidden { display: none; }
+
+        .tag-btn {
+            background-color: var(--btn-bg);
+            color: #d5d9eb;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.1s;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .tag-btn:hover {
+            background-color: var(--accent-color);
+            color: #1a1b26;
+        }
+        
+        .tag-btn:hover .ja-text { color: #1a1b26; }
+        .tag-btn:active { transform: scale(0.98); }
+
+        .ja-text {
+            font-size: 11px;
+            color: var(--ja-text);
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .en-text { font-size: 13px; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--btn-bg); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--btn-hover); }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-panel">
+        <div class="output-row">
+            <textarea id="outputArea" placeholder="ボタンをクリックしてプロンプトを作成..."></textarea>
+            <div class="actions-column">
+                <button id="btnCopy" class="action-btn btn-copy">Copy</button>
+                <button id="btnClear" class="action-btn btn-clear">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="masonryContainer" class="masonry-container"></div>
+    </div>
+
+<script>
+    const promptData = {
+        "Quality (品質)": [
+            "masterpiece | 傑作", 
+            "best quality | 最高品質", 
+            "ultra high res | 超高解像度", 
+            "8k | 8K画質", 
+            "highly detailed | 詳細な描き込み",
+            "realistic | 写実的", 
+            "photorealistic | 写真のような", 
+            "raw photo | 生写真", 
+            "absurdres | 超高解像度(不条理)"
+        ],
+        "Subject (人物)": [
+            "1girl | 1人の少女", 
+            "solo | ソロ(単独)", 
+            "beautiful face | 美しい顔", 
+            "detailed eyes | 描き込まれた瞳",
+            "large eyes | 大きな瞳(猫目)",
+            "long hair | ロングヘア", 
+            "short hair | ショートヘア", 
+            "twintails | ツインテール", 
+            "ponytail | ポニーテール",
+            "wavy hair | ウェーブヘア",
+            "blonde hair | 金髪", 
+            "silver hair | 銀髪", 
+            "black hair | 黒髪",
+            "light brown hair | 明るい茶髪",
+            "blue eyes | 青い瞳", 
+            "red eyes | 赤い瞳", 
+            "heterochromia | オッドアイ",
+            "loli | ロリ",
+            "10yo | 10歳",
+            "10 years old girl | 10歳の少女"
+        ],
+        "Body (体型)": [
+            "big breasts | 巨乳", 
+            "huge breasts | 超巨乳(爆乳)", 
+            "small breasts | 貧乳", 
+            "medium breasts | 並乳",
+            "flat chest | 絶壁(まな板)",
+            "slender | スレンダー(細身)",
+            "petite | 小柄(低身長)",
+            "petite body | 小柄な体",
+            "childlike body | 子供らしい体",
+            "tall | 高身長(長身)",
+            "gigantic | 超巨大(巨人)",
+            "curvy | 肉感的(カーブ)", 
+            "plump | ぽっちゃり",
+            "chubby | ぽちゃ(丸め)",
+            "voluptuous | 豊満(グラマー)",
+            "muscular | 筋肉質",
+            "abs | 腹筋",
+            "thick thighs | 太もも太め", 
+            "wide hips | 安産型(広め)",
+            "narrow waist | 細いウエスト",
+            "toned | 引き締まった",
+            "pale skin | 色白", 
+            "tan skin | 日焼け肌", 
+            "dark skin | 褐色肌",
+            "glossy skin | 光沢肌(テカテカ)",
+            "oiled skin | オイル肌",
+            "cleavage | 谷間",
+            "navel | へそ",
+            "soles | 足の裏",
+            "armpits | 脇"
+        ],
+        "Costume (衣装)": [
+            "school uniform | 制服", 
+            "serafuku | セーラー服", 
+            "blazer | ブレザー",
+            "maid | メイド服", 
+            "nurse | ナース服",
+            "police | 婦人警官",
+            "race queen | レースクイーン",
+            "bunny girl | バニーガール",
+            "miko | 巫女装束",
+            "nun | 修道女(シスター)",
+            "china dress | チャイナドレス", 
+            "bikini | ビキニ", 
+            "micro bikini | マイクロビキニ", 
+            "sling bikini | スリングビキニ",
+            "lingerie | ランジェリー", 
+            "lace lingerie | レース下着",
+            "babydoll | ベビードール",
+            "negligee | ネグリジェ",
+            "chemise | シュミーズ",
+            "teddy | テディ",
+            "corset | コルセット",
+            "bustier | ビスチェ",
+            "camisole | キャミソール",
+            "bra | ブラジャー",
+            "sports bra | スポーツブラ",
+            "panties | ショーツ",
+            "side-tie panties | 紐パン",
+            "thong | Tバック",
+            "striped panties | 縞パン",
+            "fundoshi | 褌",
+            "sarashi | さらし",
+            "dress | ドレス", 
+            "wedding dress | ウェディングドレス",
+            "casual clothes | 私服", 
+            "gym clothes | 体操着", 
+            "bloomers | ブルマ",
+            "sportswear | スポーツウェア",
+            "leotard | レオタード",
+            "bodysuit | ボディスーツ",
+            "tank top | タンクトップ",
+            "white shirt | 白シャツ",
+            "naked apron | 裸エプロン",
+            "armor | 鎧",
+            "thighhighs | ニーソックス", 
+            "stockings | ストッキング",
+            "fishnet pantyhose | 網タイツ",
+            "pantyhose | パンスト",
+            "garter straps | ガーターベルト", 
+            "gloves | 手袋",
+            "karyl (princess connect!) (cosplay) | キャル衣装",
+            "kokkoro (princess connect!) (cosplay) | コッコロ衣装",
+            "pecorine (princess connect!) (cosplay) | ペコリーヌ衣装",
+            "shirt lift | シャツたくし上げ",
+            "skirt lift | スカートたくし上げ",
+            "no bra | ノーブラ",
+            "no panties | ノーパン",
+            "ribbon bondage | リボン拘束",
+            "tied up | 緊縛/拘束",
+            "collar | 首輪",
+            "towel | タオル",
+            "yukata | 浴衣"
+        ],
+        "Pose/View (構図)": [
+            "standing | 立ち姿", 
+            "sitting | 座り", 
+            "kneeling | 膝立ち", 
+            "on all fours | 四つん這い", 
+            "lying | 寝そべり",
+            "looking at viewer | こちらを見る", 
+            "looking back | 振り返り", 
+            "from side | 横から", 
+            "from behind | 後ろから", 
+            "high angle | ハイアングル(俯瞰)",
+            "low angle | ローアングル(あおり)",
+            "from above | 真上から",
+            "from below | 真下から",
+            "dutch angle | 斜め構図",
+            "pov | POV(主観視点)",
+            "selfie | 自撮り",
+            "profile | 横顔",
+            "back view | 背面",
+            "cowboy shot | 太ももから上", 
+            "close-up | 接写(アップ)", 
+            "portrait | ポートレート", 
+            "full body | 全身",
+            "wide shot | ワイドショット(引き)",
+            "dynamic angle | ダイナミックな構図",
+            "m-shaped legs | M字開脚",
+            "spread legs | 開脚",
+            "sitting on floor | 床座り",
+            "w-sitting | W座り",
+            "holding phone | スマホ持ち",
+            "covering crotch | 股間隠し",
+            "showing stomach | 腹見せ",
+            "breast press | 胸押し付け",
+            "lifting leg | 足上げ",
+            "lifting arms | 腕上げ",
+            "arms behind back | 後ろ手拘束",
+            "arm support | 腕で支える",
+            "partially submerged | お湯に浸かる",
+            "partially underwater shot | 水面/水中分割",
+            "breasts on another's back | 背中に胸押し付け"
+        ],
+        "Situation (表情・状態)": [
+            "blush | 赤面", 
+            "smile | 笑顔", 
+            "open mouth | 口開け", 
+            "tongue out | 舌出し", 
+            "sweat | 汗", 
+            "tears | 涙", 
+            "angry | 怒り", 
+            "embarrassed | 恥ずかしい", 
+            "ahegao | アヘ顔", 
+            "heavy breathing | 荒い息遣い",
+            "seductive smile | 誘惑的な笑顔",
+            "mischievous expression | 小悪魔的な表情",
+            "mischievous smile | 小悪魔的な笑顔",
+            "innocent expression | 無邪気な表情",
+            "scornful look | 蔑んだ目",
+            "looking up | 見上げる",
+            "pleasure | 快感",
+            "struggling | 抵抗",
+            "messy hair | 乱れた髪",
+            "drool | よだれ",
+            "cheek bulge | 頬袋(フェラ)",
+            "throat bulge | 喉ボコ(イラマ)",
+            "head grab | 頭掴み",
+            "towel slip | タオルずり落ち",
+            "drinking sake | 日本酒を飲む",
+            "washing back | 背中を洗う",
+            "nyotaimori | 女体盛り",
+            "looking at each other | 見つめ合い",
+            "interlocked fingers | 恋人繋ぎ",
+            "sitting on lap | 膝に座る",
+            "kissing | キス",
+            "saliva trail | 唾液ブリッジ",
+            "leg lock | だいしゅきホールド",
+            "arms around neck | 腕を首に回す",
+            "ass grab | 尻掴み"
+        ],
+        "Location (背景)": [
+            "simple background | シンプルな背景", 
+            "white background | 白背景", 
+            "indoor | 屋内", 
+            "bedroom | 寝室", 
+            "bed | ベッド",
+            "bathroom | 浴室", 
+            "classroom | 教室", 
+            "outdoors | 屋外", 
+            "beach | ビーチ", 
+            "night | 夜", 
+            "fantasy world | ファンタジー世界",
+            "hot spring | 温泉",
+            "sauna | サウナ",
+            "ryokan | 旅館",
+            "hotel room | ホテルの一室",
+            "love hotel | ラブホテル",
+            "under table | 机の下",
+            "glory hole | グローリーホール(壁穴)",
+            "train interior | 電車内"
+        ],
+        "Effects (効果)": [
+            "soft lighting | ソフトライティング", 
+            "cinematic lighting | 映画風照明", 
+            "lens flare | レンズフレア", 
+            "depth of field | 被写界深度(ボケ)",
+            "wind | 風", 
+            "water | 水", 
+            "wet | 濡れ", 
+            "wet clothes | 濡れ透け",
+            "steam | 湯気",
+            "water drops | 水滴",
+            "soap bubbles | 石鹸の泡", 
+            "foam on body | 体に泡",
+            "splashing water | 水しぶき",
+            "pink lighting | ピンク照明",
+            "lotion | ローション/ぬるぬる",
+            "steamy background | 湯気(背景)"
+        ],
+        "Positions (体位)": [
+            "missionary | 正常位",
+            "doggystyle | バック(後背位)",
+            "cowgirl position | 騎乗位",
+            "reverse cowgirl position | 逆騎乗位",
+            "upright straddle | 対面座位(またがり)",
+            "mating press | プレス(足上げ)",
+            "spitroast | ダブル(前後)",
+            "gangbang | 輪姦(多対一)",
+            "paizuri | パイズリ",
+            "irrumatio | イラマチオ",
+            "facesitting | 顔騎",
+            "scissors position | 貝合わせ",
+            "69 position | シックスナイン",
+            "standing doggystyle | 立位バック",
+            "against wall | 壁際",
+            "carrying sex | 駅弁",
+            "reverse upright straddle | 逆対面座位",
+            "sandwich | サンドイッチ(3P)",
+            "clothed sex | 着衣セックス"
+        ],
+        "Foreplay (前戯・奉仕)": [
+            "kissing | キス",
+            "french kiss | 濃厚キス(舌入れ)",
+            "fellatio | フェラチオ",
+            "handjob | 手コキ",
+            "fingering | 手マン",
+            "cunnilingus | クンニ",
+            "footjob | 足コキ",
+            "breast sucking | パイ吸い",
+            "licking | 舐める",
+            "deepthroat | ディープスロート",
+            "masturbation | オナニー",
+            "licking testicles | 玉舐め",
+            "washing body | 体を洗う(洗いっこ)"
+        ],
+        "Characters (キャラクター)": [
+            "karyl (princess connect!), cat ears, cat tail, black hair, green eyes | キャル (プリコネ)",
+            "kokkoro (princess connect!) | コッコロ (プリコネ)",
+            "pecorine (princess connect!) | ペコリーヌ (プリコネ)",
+            "rem (re:zero) | レム (リゼロ)",
+            "ram (re:zero) | ラム (リゼロ)",
+            "emilia (re:zero) | エミリア (リゼロ)",
+            "hatsune miku | 初音ミク",
+            "soryu asuka langley | アスカ (エヴァ)",
+            "ayanami rei | 綾波レイ (エヴァ)",
+            "mari illustrious makinami | マリ (エヴァ)",
+            "raiden shogun | 雷電将軍 (原神)",
+            "ganyu (genshin impact) | 甘雨 (原神)",
+            "yae miko | 八重神子 (原神)",
+            "hu tao (genshin impact) | 胡桃 (原神)",
+            "nahida (genshin impact) | ナヒーダ (原神)",
+            "frieren | フリーレン (葬送のフリーレン)",
+            "fern | フェルン (葬送のフリーレン)",
+            "makima (chainsaw man) | マキマ (チェンソーマン)",
+            "power (chainsaw man) | パワー (チェンソーマン)",
+            "yor forger | ヨル・フォージャー (SPY×FAMILY)",
+            "anya forger | アーニャ (SPY×FAMILY)",
+            "marin kitagawa | 喜多川海夢 (着せ恋)",
+            "hitori gotoh | 後藤ひとり (ぼっち・ざ・ろっく!)",
+            "ikuyo kita | 喜多郁代 (ぼっち・ざ・ろっく!)",
+            "2b (nier:automata) | 2B (ニーアオートマタ)",
+            "tifa lockhart | ティファ (FF7)",
+            "aerith gainsborough | エアリス (FF7)",
+            "saber | セイバー (Fate)",
+            "tohsaka rin | 遠坂凛 (Fate)",
+            "mash kyrielight | マシュ (Fate)",
+            "illyasviel von einzbern | イリヤ (Fate)",
+            "chloe von einzbern | クロエ (Fate)",
+            "miyu edelfelt | 美遊 (Fate)",
+            "atago (azur lane) | 愛宕 (アズレン)",
+            "bremerton (azur lane) | ブレマートン (アズレン)",
+            "kashima (kantai collection) | 鹿島 (艦これ)",
+            "shimakaze (kantai collection) | 島風 (艦これ)",
+            "ichinose asuna | 一之瀬アスナ (ブルアカ)",
+            "kakudate karin | 角楯カリン (ブルアカ)",
+            "kisaki (blue archive) | 妃 (ブルアカ)",
+            "houshou marine | 宝鐘マリン (ホロライブ)",
+            "gawr gura | がうる・ぐら (ホロライブ)",
+            "usada pekora | 兎田ぺこら (ホロライブ)",
+            "chisato nishikigi | 錦木千束 (リコリコ)",
+            "takina inoue | 井ノ上たきな (リコリコ)",
+            "roxy migurdia | ロキシー (無職転生)",
+            "eris boreas greyrat | エリス (無職転生)",
+            "10 years old girl, petite body, light brown wavy hair, small breasts, innocent expression, childlike body, mischievous expression, large eyes | 莉愛 (ベビードール)"
+        ],
+        "Props (小道具)": [
+             "sake | 日本酒",
+             "bath stool | 風呂イス",
+             "inflatable mat | エアマット"
+        ],
+        "NSFW (Option)": [
+            "nsfw | NSFW(閲覧注意)", 
+            "uncensored | 無修正", 
+            "nipples | 乳首", 
+            "nude | 全裸", 
+            "pussy | 女性器", 
+            "sex | 性交", 
+            "vaginal | 膣内", 
+            "anal | アナル", 
+            "fellatio | フェラチオ", 
+            "cum | 精液", 
+            "cum on body | 体に射精", 
+            "creampie | 中出し",
+            "pussy juice | 愛液(まん汁)",
+            "saliva | 唾液",
+            "nipples visible | 乳首浮き",
+            "peeing | 放尿",
+            "exhibitionism | 露出症",
+            "public sex | 公衆セックス"
+        ]
+    };
+
+    // DOM要素の取得
+    const masonryContainer = document.getElementById('masonryContainer');
+    const outputArea = document.getElementById('outputArea');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnClear = document.getElementById('btnClear');
+
+    // 初期化
+    function init() {
+        renderAllCategories();
+        
+        // イベントリスナーの登録
+        btnCopy.addEventListener('click', copyToClipboard);
+        btnClear.addEventListener('click', clearPrompt);
+    }
+
+    function renderAllCategories() {
+        masonryContainer.innerHTML = '';
+        
+        for (const [categoryName, tags] of Object.entries(promptData)) {
+            const card = document.createElement('div');
+            card.className = 'category-card';
+
+            const header = document.createElement('div');
+            header.className = 'category-header';
+            header.innerHTML = `<span>${categoryName}</span> <span style="font-size:0.8em">▼</span>`;
+            header.onclick = () => {
+                const content = card.querySelector('.category-content');
+                content.classList.toggle('content-hidden');
+            };
+
+            const content = document.createElement('div');
+            content.className = 'category-content';
+
+            tags.forEach(tagEntry => {
+                let [enText, jaText] = tagEntry.split('|').map(s => s.trim());
+                if (!jaText) jaText = enText;
+
+                const btn = document.createElement('button');
+                btn.className = 'tag-btn';
+                btn.innerHTML = `<span class="ja-text">${jaText}</span><span class="en-text">${enText}</span>`;
+                
+                btn.onclick = (e) => {
+                    const targetBtn = e.target.closest('.tag-btn');
+                    addTag(enText);
+                    
+                    targetBtn.style.backgroundColor = '#7aa2f7';
+                    const jaSpan = targetBtn.querySelector('.ja-text');
+                    const originalColor = jaSpan.style.color;
+                    jaSpan.style.color = '#1a1b26';
+
+                    setTimeout(() => {
+                        targetBtn.style.backgroundColor = '';
+                        jaSpan.style.color = originalColor;
+                    }, 200);
+                };
+                content.appendChild(btn);
+            });
+
+            card.appendChild(header);
+            card.appendChild(content);
+            masonryContainer.appendChild(card);
+        }
+    }
+
+    function addTag(tag) {
+        let currentText = outputArea.value.trim();
+        const regex = new RegExp(`(^|,\\s*)${tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(,|$)`);
+        
+        if (regex.test(currentText)) return;
+
+        if (currentText.length > 0 && !currentText.endsWith(',')) {
+            currentText += ', ';
+        } else if (currentText.length > 0) {
+            currentText += ' ';
+        }
+
+        outputArea.value = currentText + tag;
+        outputArea.scrollTop = outputArea.scrollHeight;
+    }
+
+    function copyToClipboard() {
+        outputArea.select();
+        document.execCommand('copy');
+        
+        const originalText = btnCopy.textContent;
+        btnCopy.textContent = 'Copied!';
+        btnCopy.style.backgroundColor = '#9ece6a';
+        
+        setTimeout(() => {
+            btnCopy.textContent = originalText;
+            btnCopy.style.backgroundColor = '';
+        }, 1000);
+    }
+
+    function clearPrompt() {
+        // 確認なしで即クリア
+        outputArea.value = '';
+    }
+
+    init();
+
+</script>
+
+</body>
+</html>
